@@ -15,6 +15,7 @@ class ATM:
 
         # log transactions to write on logout
         self.transactions = []
+        self.transfers = []
     
     def run(self):
         self.outputStream.write(f"welcome to ATM {version}")
@@ -75,7 +76,7 @@ class ATM:
             account_name = self.inputStream.readNextLine().strip()
                         
             # check if account holder exists
-            if not self.accounts.findAccount(account_name, None):
+            if not self.accounts.findAccountByNameAndNumber(account_name, None):
                 self.outputStream.write(f"no account found for '{account_name}'")
                 return
             
@@ -122,7 +123,7 @@ class ATM:
         account_num = self.inputStream.readNextLine().strip()
 
         # find account
-        account = self.accounts.findAccount(account_name, account_num)
+        account = self.accounts.findAccountByNameAndNumber(account_name, account_num)
         if not account:
             self.outputStream.write(f"no account found for '{account_name}' with account number '{account_num}'")
             return
@@ -155,7 +156,7 @@ class ATM:
         account_num = self.inputStream.readNextLine().strip()
 
         # find account
-        account = self.accounts.findAccount(account_name, account_num)
+        account = self.accounts.findAccountByNameAndNumber(account_name, account_num)
         if not account:
             self.outputStream.write(f"no account found for '{account_name}' with account number '{account_num}'")
             return
@@ -182,7 +183,60 @@ class ATM:
         self.record_transaction("01", account_name, account_num, amount, "")
 
     def transfer(self):
-        self.outputStream.write("placeholder for transfer...")
+        # self.outputStream.write("placeholder for transfer...")
+
+        # if the user is an admin, aask for the account holder name 
+        if self.session.isAdmin:
+            self.outputStream.write("enter account holder name")
+            name = self.inputStream.readNextLine()
+        else:
+            name = "Standard"
+        
+        # get the account number of the money sender
+        self.outputStream.write("enter account number to transfer money from")
+        account_sender_num = self.inputStream.readNextLine().strip()
+
+        # get the account number of the money reciever
+        self.outputStream.write("enter account number to transfer money to")
+        account_reciever_num = self.inputStream.readNextLine().strip()
+
+        # get the amount that will be transferred 
+        self.outputStream.write("enter transfer amount:")
+        transfer_amount = float(self.inputStream.readNextLine())
+
+        # constraint : can't transfer 0 or less dollars
+        if transfer_amount <= 0:
+            self.outputStream.write("can't transfer 0 or less dollars")
+            return
+
+        # constraint : standard accounts can't transfer more than 1000 dollars
+        if (not self.session.isAdmin) and (transfer_amount > 1000):
+            self.outputStream.write("can't withdraw more than 1000 in standard mode")
+            return
+
+        accountSender = self.accounts.findAccount(account_sender_num)
+        accountReciever = self.accounts.findAccount(account_reciever_num)
+
+        # constraint: Sender balance must be at least $0.00 after withdrawal
+        if accountSender.balance < transfer_amount:
+            self.outputStream.write("Sender has insufficient funds for withdrawal")
+            return
+
+        # constraint: Reciever balance must be at least $0.00 after withdrawal
+        if accountReciever.balance < transfer_amount:
+            self.outputStream.write("Sender has insufficient funds for withdrawal")
+            return
+
+        accountSender.balance = accountSender.balance - transfer_amount
+        accountReciever.balance = accountSender.balance + transfer_amount 
+
+        # Record Transfer
+        self.record_transfer(self, code="4", account_num_sender=account_sender_num, 
+                             account_num_reciever=account_reciever_num, amount=transfer_amount, name=name)
+
+        self.outputStream.write("Transaction Completed")
+        return
+
 
     def pay_bill(self):
         self.outputStream.write("enter bill amount:")
@@ -217,7 +271,7 @@ class ATM:
         account_num = self.inputStream.readNextLine().strip()
 
         # constraint: account holder’s name must be the name of an existing account holder
-        account = self.accounts.findAccount(account_name, account_num)
+        account = self.accounts.findAccountByNameAndNumber(account_name, account_num)
         if not account:
             self.outputStream.write(f"no account found for '{account_name}' with account number '{account_num}'")
             return
@@ -251,5 +305,15 @@ class ATM:
         }
         self.transactions.append(transaction)
 
+    def record_transfer(self, code,  account_num_sender, account_num_reciever, amount, misc,name="Standard_Account"):
+        transaction = {
+            'code': code,
+            'name': name,
+            'account_num_sender': account_num_sender,
+            'account_num_reciever' : account_num_reciever,
+            'amount': amount,
+            'misc': misc
+        }
+        self.transactions.append(transaction)
     def display_current_balance(self):
         self.outputStream.write(f"current balance: ${self.balance:.2f}")

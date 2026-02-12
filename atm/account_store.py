@@ -1,4 +1,5 @@
 from atm.account import Account
+
 class AccountStore:
     def __init__(self):
         self.accounts = []
@@ -22,19 +23,27 @@ class AccountStore:
                 account = Account(name,account_num, balance, status)
                 self.accounts.append(account)
         
-    
-    def findAccount(self, name, accountNum):
+    # Find account given name and accountNum
+    def findAccountByNameAndNumber(self, name, accountNum):
         for account in self.accounts:
-            # if both provided
             if account.name == name and account.accountNum == accountNum:
                 return account
-            # if only name provided
+        return None
+    
+    # Find account only given name
+    def findAccountByName(self, name):
+        for account in self.accounts:
             if account.name == name:
                 return account
-            # if only account number provided
+        return None
+
+    # Find account only given account num
+    def findAccountByAccountNum(self, accountNum):
+        for account in self.accounts:
             if account.accountNum == accountNum:
                 return account
         return None
+
 
     def generateNewAccount(self):
         # format: NNNNN_AAAAAAAAAAAAAAAAAAAA_S_PPPPPPPP
