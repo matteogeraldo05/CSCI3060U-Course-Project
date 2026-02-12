@@ -185,12 +185,19 @@ class ATM:
     def transfer(self):
         # self.outputStream.write("placeholder for transfer...")
 
-        # if the user is an admin, aask for the account holder name 
+        # constraint: bank account must be a valid account for the account holder currently logged in.
+        if not self.session.loggedIn:
+            self.outputStream.write("not logged in. please login first")
+            return
+
+        # should ask for the account holder’s name (if logged in as admin)
         if self.session.isAdmin:
-            self.outputStream.write("enter account holder name")
-            name = self.inputStream.readNextLine()
+            self.outputStream.write("enter account holder name:")
+            account_name = self.inputStream.readNextLine().strip()
         else:
-            name = "Standard"
+            account_name = self.session.accountHolderName
+
+
         
         # get the account number of the money sender
         self.outputStream.write("enter account number to transfer money from")
@@ -232,7 +239,7 @@ class ATM:
 
         # Record Transfer
         self.record_transfer(self, code="4", account_num_sender=account_sender_num, 
-                             account_num_reciever=account_reciever_num, amount=transfer_amount, name=name)
+                             account_num_reciever=account_reciever_num, amount=transfer_amount, name=account_name)
 
         self.outputStream.write("Transaction Completed")
         return
