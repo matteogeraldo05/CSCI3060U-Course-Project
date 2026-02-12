@@ -3,7 +3,7 @@ from .account_store import AccountStore
 from .input_stream import InputStream
 from .output_stream import OutputStream
 
-version = "alpha v1.1"
+version = "alpha v1.2"
 class ATM:
     def __init__(self, accounts_path, inputPath, outputPath):
         self.session = Session()
@@ -26,7 +26,7 @@ class ATM:
             self.outputStream.write("4. transfer")
             self.outputStream.write("5. pay bill")
             self.outputStream.write("6. create account")
-            self.outputStream.write("7. delete account")
+            self.outputStream.write("7. disable account")
             self.outputStream.write("8. change plan")
             self.outputStream.write("9. logout")
             self.outputStream.write("10. exit\n")
@@ -47,8 +47,8 @@ class ATM:
                 self.pay_bill()
             elif cli_choice == "create account":
                 self.create_account()
-            elif cli_choice == "delete account":
-                self.delete_account()
+            elif cli_choice == "disable account":
+                self.disable_account()
             elif cli_choice == "change plan":
                 self.change_plan()
             elif cli_choice == "exit":
@@ -197,8 +197,38 @@ class ATM:
     def create_account(self):
         self.outputStream.write("placeholder for creating a new account...")
 
-    def delete_account(self):
-        self.outputStream.write("placeholder for deleting account...")
+    def disable_account(self):
+        # constraint: privileged transaction - only accepted when logged in admin mode
+        if not self.session.loggedIn:
+            self.outputStream.write("not logged in. please login first")
+            return
+        
+        if not self.session.isAdmin:
+            self.outputStream.write("not an admin. access denied")
+            return
+        
+        # should ask for the bank account holder’s name (as a text line)
+        self.outputStream.write("enter account holder name:")
+        account_name = self.inputStream.readNextLine().strip()
+        
+        # should ask for the account number (as a text line)
+        # constraint: account number must be the number of the account holder specified
+        self.outputStream.write("enter account number:")
+        account_num = self.inputStream.readNextLine().strip()
+
+        # constraint: account holder’s name must be the name of an existing account holder
+        account = self.accounts.findAccount(account_name, account_num)
+        if not account:
+            self.outputStream.write(f"no account found for '{account_name}' with account number '{account_num}'")
+            return
+
+        # should change the bank account from active (A) to disabled (D)
+        account.status = "D"
+
+        # should save this information for the bank account transaction file
+        self._record_transaction("07", account_name, account_num, 0.0, "")
+    
+        self.outputStream.write(f"Account {account_num} for {account_name} has been disabled.") 
                 
     def change_plan(self):
         self.outputStream.write("placeholder for changing plan...")
