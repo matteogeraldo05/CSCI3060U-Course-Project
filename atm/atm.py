@@ -4,6 +4,17 @@ from .input_stream import InputStream
 from .output_stream import OutputStream
 
 version = "alpha v1.2"
+
+'''
+The ATM Class is the main controller class of the ATM Banking system
+
+This class initiates a session for a user, and then allows the user to manage
+banking operations such as deposit, withdraw or transfer money. 
+It also allows for administrative operations such as account creation, account deletion,
+disabling accounts and changing plans.
+It maintains session state and logs operations into a file upon logout
+'''
+
 class ATM:
     def __init__(self, accounts_path, inputPath, outputPath):
         self.session = Session()
@@ -17,6 +28,15 @@ class ATM:
         self.transactions = []
         self.transfers = []
     
+    '''
+    This is the main execution loop for the ATM system.
+    
+    Runs automatically when the system is started, and displays the main menu,
+    it then processes user inputs and routes to the correct operation
+    methods
+
+    If there is an issue during a method, the system gets re-routed to this interface
+    '''
     def run(self):
         self.outputStream.write(f"welcome to ATM {version}")
 
@@ -57,6 +77,17 @@ class ATM:
             else:
                 self.outputStream.write("not an option, try again")
 
+    '''
+    Authenticates a user into the ATM system as either admin or standard user.
+
+    Admin : Granted full system privliges without an account association
+    Standard : Requries account holder name and checks to see if a valid accounts exists.
+
+    Constraints : 
+        - This function cannot be run if a user is already logged in.
+        - Standard accounts must have created an account before logging in.
+
+    '''
     def login(self):    
         # constraint: no subsequent login should be accepted after a login, until after a logout
         if self.session.loggedIn:
@@ -88,7 +119,17 @@ class ATM:
         else:
             self.outputStream.write("not an option, try 'standard' or 'admin'")
             return
+    
+    '''
+    Ends current user session and writes transaction to a log file.
 
+    Then ensures that the current sesion is cleared by erasing transaction history from memory and resetting account
+    information. Essentially clears the state.
+
+    Constraints : 
+        - Only accepted when logged in
+
+    '''
     def logout(self):    
         # constraint: should only be accepted when logged in
         if not self.session.loggedIn:
@@ -105,6 +146,17 @@ class ATM:
         self.transactions = []
         self.outputStream.write("logged out successfully")
 
+    '''
+    Processes a deposit transaction to add funds to a bank account 
+
+    If the user is admin, asks for an account holder name
+    Records transaction and ensures deposited funds are not available for use in session
+
+    Contraints : 
+        - User must be logged in 
+        - Account must be valid for the account holder 
+        - Deposited funds can only be used after logout
+    '''
     def deposit(self):
         # constraint: bank account must be a valid account for the account holder currently logged in.
         if not self.session.loggedIn:
@@ -138,6 +190,20 @@ class ATM:
         # should save this information for the bank account transaction file
         self.record_transaction("04", account_name, account_num, amount, "")
 
+
+    '''
+    Processes a withdrawl transaction to remove funds from a bank account
+
+    If the user is an admin, it prompts for an account holder name
+    If the user is not an admin, it uses the current session account holder's name
+
+    Constraints 
+        - Must be logged in 
+        - Account must be valid for the account  holder
+        - Maximum withdraw in standard mode is $500.00
+        - Account must remain more than $0.00 after withdrawl
+
+    '''
     def withdraw(self):
         # constraint: bank account must be a valid account for the account holder currently logged in.
         if not self.session.loggedIn:
@@ -182,8 +248,25 @@ class ATM:
         # should save this information for the bank account transaction file
         self.record_transaction("01", account_name, account_num, amount, "")
 
+
+    '''
+    Processes a transfer between two accounts 
+
+    If the user is admin, it prompts for an account holder's name 
+    Otherwise, uses the current sessions account holder name
+    Validates amounts and balances before transfer
+
+    Constraints:
+        - User must be logged in
+        - Transfer amount must be greater than $0.00
+        - Maximum transfer in standard mode has to be less than $1000
+        - Sender balance must remain greather than $0.00 after transfer
+    '''
     def transfer(self):
-        # self.outputStream.write("placeholder for transfer...")
+        if not self.session.loggedIn:
+            self.outputStream.write("not logged in. please login first")
+            return
+
 
         # constraint: bank account must be a valid account for the account holder currently logged in.
         if not self.session.loggedIn:
@@ -221,8 +304,8 @@ class ATM:
             self.outputStream.write("can't withdraw more than 1000 in standard mode")
             return
 
-        accountSender = self.accounts.findAccount(account_sender_num)
-        accountReciever = self.accounts.findAccount(account_reciever_num)
+        accountSender = self.accounts.findAccountByName(account_sender_num)
+        accountReciever = self.accounts.findAccountByName(account_reciever_num)
 
         # constraint: Sender balance must be at least $0.00 after withdrawal
         if accountSender.balance < transfer_amount:
@@ -242,8 +325,12 @@ class ATM:
                              account_num_reciever=account_reciever_num, amount=transfer_amount, name=account_name)
 
         self.outputStream.write("Transaction Completed")
-        return
+        self.outputStream.write(f"New Balance Sender : {accountSender.balance}")
+        self.outputStream.write(f"New Balance Reciever : {accountReciever.balance}")
 
+
+        return
+    
 
     def pay_bill(self):
         self.outputStream.write("enter bill amount:")
