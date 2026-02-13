@@ -20,7 +20,10 @@ class AccountStore:
                 if name == "END_OF_FILE":
                     break
                 
-                account = Account(name,account_num, balance, status)
+                #!TEMP FIX BECUASE PLAN IS NOT STORED
+                plan = None
+
+                account = Account(name,account_num, balance, status, plan)
                 self.accounts.append(account)
         
     # Find account given name and accountNum
