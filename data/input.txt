@@ -1,0 +1,8 @@
+login
+standard
+boss test
+paybill
+00002
+EC
+150.50
+logout
