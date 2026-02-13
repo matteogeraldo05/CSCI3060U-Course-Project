@@ -6,6 +6,17 @@ from .record_actions import RecordActions
 
 
 version = "alpha v1.4"
+
+'''
+The ATM Class is the main controller class of the ATM Banking system
+
+This class initiates a session for a user, and then allows the user to manage
+banking operations such as deposit, withdraw or transfer money. 
+It also allows for administrative operations such as account creation, account deletion,
+disabling accounts and changing plans.
+It maintains session state and logs operations into a file upon logout
+'''
+
 class ATM:
     def __init__(self, accounts_path, inputPath, outputPath):
         self.session = Session()
@@ -24,6 +35,15 @@ class ATM:
         self.session_transfers = 0.0
         self.session_paybills = 0.0
 
+    '''
+    This is the main execution loop for the ATM system.
+    
+    Runs automatically when the system is started, and displays the main menu,
+    it then processes user inputs and routes to the correct operation
+    methods
+
+    If there is an issue during a method, the system gets re-routed to this interface
+    '''
     def run(self):
         self.outputStream.write(f"welcome to ATM {version}")
 
@@ -64,6 +84,19 @@ class ATM:
             else:
                 self.outputStream.write("not an option, try again")
 
+
+
+    '''
+    Authenticates a user into the ATM system as either admin or standard user.
+
+    Admin : Granted full system privliges without an account association
+    Standard : Requries account holder name and checks to see if a valid accounts exists.
+
+    Constraints : 
+        - This function cannot be run if a user is already logged in.
+        - Standard accounts must have created an account before logging in.
+
+    '''
     def login(self):    
         # constraint: no subsequent login should be accepted after a login, until after a logout
         if self.session.loggedIn:
@@ -96,6 +129,17 @@ class ATM:
             self.outputStream.write("not an option, try 'standard' or 'admin'")
             return
 
+
+    '''
+    Ends current user session and writes transaction to a log file.
+
+    Then ensures that the current sesion is cleared by erasing transaction history from memory and resetting account
+    information. Essentially clears the state.
+
+    Constraints : 
+        - Only accepted when logged in
+
+    '''
     def logout(self):    
         # constraint: should only be accepted when logged in
         if not self.session.loggedIn:
@@ -120,6 +164,18 @@ class ATM:
         self.outputStream.write(f"thank you for using ATM {version}!")
         self.running = False
 
+
+    '''
+    Processes a deposit transaction to add funds to a bank account 
+
+    If the user is admin, asks for an account holder name
+    Records transaction and ensures deposited funds are not available for use in session
+
+    Contraints : 
+        - User must be logged in 
+        - Account must be valid for the account holder 
+        - Deposited funds can only be used after logout
+    '''
     def deposit(self):
         # constraint: bank account must be a valid account for the account holder currently logged in.
         if not self.session.loggedIn:
@@ -163,6 +219,20 @@ class ATM:
         # should save this information for the bank account transaction file
         self.recordActions.record_transaction("04", account_name, account_num, amount, "")
 
+
+    '''
+    Processes a withdrawl transaction to remove funds from a bank account
+
+    If the user is an admin, it prompts for an account holder name
+    If the user is not an admin, it uses the current session account holder's name
+
+    Constraints 
+        - Must be logged in 
+        - Account must be valid for the account  holder
+        - Maximum withdraw in standard mode is $500.00
+        - Account must remain more than $0.00 after withdrawl
+
+    '''
     def withdraw(self):
         # constraint: bank account must be a valid account for the account holder currently logged in.
         if not self.session.loggedIn:
@@ -223,6 +293,19 @@ class ATM:
         # should save this information for the bank account transaction file
         self.recordActions.record_transaction("01", account_name, account_num, amount, "")
 
+    '''
+    Processes a transfer between two accounts 
+
+    If the user is admin, it prompts for an account holder's name 
+    Otherwise, uses the current sessions account holder name
+    Validates amounts and balances before transfer
+
+    Constraints:
+        - User must be logged in
+        - Transfer amount must be greater than $0.00
+        - Maximum transfer in standard mode has to be less than $1000
+        - Sender balance must remain greather than $0.00 after transfer
+    '''
     def transfer(self):
         # constraint: bank account must be a valid account for the account holder currently logged in.
         if not self.session.loggedIn:
@@ -305,6 +388,24 @@ class ATM:
         self.outputStream.write("Transaction Completed")
         return
 
+
+    '''
+    Processes a bill payment transaction to an approved company
+
+    Makes sure the session is in a logged in state, otherwise return to menu
+    If the session is in admin mode, it prompts for the account holder name
+    Validates the company, amount limits, and account balance before processing the payment 
+
+    Constraints: 
+        - Must be logged in
+        - Account must be valid for the account holder
+        - Account must  not be disabled
+        - Company must be one of: EC, CQ, or FI
+        - Payment amount must be positive
+        - Maximum session payment in standard mode: $2000.00 cumulative
+        - Account balance must remain >= $0.00 after payment
+
+    '''
     def paybill(self):
         # constraint: bank account must be a valid account for the account holder currently logged in.
         if not self.session.loggedIn:
@@ -379,7 +480,24 @@ class ATM:
         
         # should save this information for the bank account transaction file
         self.recordActions.record_transaction("03", account_name, account_num, amount, company_code)
-        
+    
+    '''
+    Creates a new bank account with a unique account number
+    Admin command only
+
+    Generates an account number that is not in use (incremental). 
+    Prompts for account holder name and initial balance, then creates account with active initial status.
+    
+    Constraints: 
+        - Must be logged in
+        - Must be in admin mode (privileged transaction)
+        - Account numbers must be unique 
+        - Account holder name limited to 20 characters maximum
+        - Initial balance must be between $0.00 and $99999.99
+        - New account not available for transactions until next session
+
+    
+    '''
     def create(self):
         # constraint: privileged transaction - only accepted when logged in admin mode
         if not self.session.loggedIn:
@@ -438,6 +556,17 @@ class ATM:
         self.outputStream.write(f"Account created: {acc_num} for {acc_name.strip()} with balance ${acc_balance:.2f}")
         self.outputStream.write("Note: This account will not be available for transactions until next session")
 
+    '''
+    Deletes an exisiting bank account from the system
+
+    Prompts for account holder name, ensures the account exists and then removes it 
+    from the accounts file by rewriting the file without that account    
+    
+    Constraints : 
+        - Must be logged in
+        - Must be in admin mode
+        - Account musdt be valid (must exist)    
+    '''
     def delete(self):
         # constraint: privileged transaction - only accepted when logged in admin mode
         if not self.session.loggedIn:
@@ -506,6 +635,19 @@ class ATM:
 
         self.outputStream.write(f"Account {account_num} for {account_name} has been deleted.")
 
+    '''
+    Disables an existing account, (changes status from active to disabled)
+
+    Prompts for an account holder name and account number, validates that the acount exists, then changes
+    status to "D" (disabled).
+    Disabled accounts can not be used for transactions until re-enabled
+    
+    Constraints
+        - Must be logged in
+        - Must be in admin mode
+        - Account nuumber must exist and match specified account holder
+
+    '''
     def disable(self):
         # constraint: privileged transaction - only accepted when logged in admin mode
         if not self.session.loggedIn:
@@ -538,7 +680,20 @@ class ATM:
         self.recordActions.record_transaction("07", account_name, account_num, 0.0, "")
     
         self.outputStream.write(f"account {account_num} for {account_name} has been disabled") 
-                
+    
+    '''
+    Changes account payment plan between Student to Non-Student
+    If an account is student, it changes payment plan to non-student and vice versa
+    This allows the bank to adjust fee structures based on if the account is a student or not
+
+    Contraints
+        - Must be logged in
+        - Must be in admin mode
+        - Account holder name must exist 
+        - Account number must match the specified name
+        - Account plan must either be "SP" (student plan) or "NP" (non-student plan)
+    
+    '''
     def changeplan(self):
         if not self.session.loggedIn:
             self.outputStream.write("not logged in. please login first")
