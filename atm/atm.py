@@ -298,7 +298,7 @@ class ATM:
 
     If the user is admin, it prompts for an account holder's name 
     Otherwise, uses the current sessions account holder name
-    Validates amounts and balances before transfer
+    Validates amounts and balances before `transfer`
 
     Constraints:
         - User must be logged in
@@ -383,7 +383,7 @@ class ATM:
 
         # Record Transfer
         self.recordActions.record_transfer(code="02", account_num_sender=account_sender_num, 
-                             account_num_reciever=account_reciever_num, amount=transfer_amount, misc=None, name=account_name)
+                             account_num_reciever=account_reciever_num, amount=transfer_amount, misc="N/A", name=account_name)
 
         self.outputStream.write("Transaction Completed")
         return

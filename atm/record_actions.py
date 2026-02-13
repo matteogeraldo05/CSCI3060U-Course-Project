@@ -3,7 +3,7 @@ class RecordActions:
     def __init__(self):
         self.transactions = []
 
-    def record_transaction(self, code, name, account_num, amount, misc):
+    def record_transaction(self, code, name, account_num, amount, misc="N/A"):
         transaction = {
             'code': code,
             'name': name,
@@ -13,10 +13,11 @@ class RecordActions:
         }
         self.transactions.append(transaction)
 
-    def record_transfer(self, code, account_num_sender, account_num_reciever, amount, misc, name="Standard_Account"):
+    def record_transfer(self, code, account_num_sender, account_num_reciever, amount, misc="N/A", name="Standard_Account"):
         transaction = {
             'code': code,
             'name': name,
+            'account_num':account_num_sender,
             'account_num_sender': account_num_sender,
             'account_num_reciever': account_num_reciever,
             'amount': amount,

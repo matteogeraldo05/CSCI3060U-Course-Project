@@ -1,8 +1,15 @@
 login
 standard
 boss test
+deposit
+00002
+10
 paybill
 00002
 EC
+150.50
+transfer
+00002
+00001
 150.50
 logout
