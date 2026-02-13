@@ -27,10 +27,11 @@ class ATM:
             self.outputStream.write("4. transfer")
             self.outputStream.write("5. pay bill")
             self.outputStream.write("6. create account")
-            self.outputStream.write("7. disable account")
-            self.outputStream.write("8. change plan")
-            self.outputStream.write("9. logout")
-            self.outputStream.write("10. exit\n")
+            self.outputStream.write("7. delete account")
+            self.outputStream.write("8. disable account")
+            self.outputStream.write("9. change plan")
+            self.outputStream.write("10. logout")
+            self.outputStream.write("11. exit\n")
 
             cli_choice = self.inputStream.readNextLine().strip().lower()
             
@@ -48,6 +49,8 @@ class ATM:
                 self.pay_bill()
             elif cli_choice == "create account":
                 self.create_account()
+            elif cli_choice == "delete account":
+                self.delete()
             elif cli_choice == "disable account":
                 self.disable_account()
             elif cli_choice == "change plan":
@@ -244,6 +247,15 @@ class ATM:
         self.outputStream.write("Transaction Completed")
         return
 
+        if not self.session.isAdmin:
+            self.outputStream.write("Error: Admin privileges required")
+            return
+        
+        account_name = input("Enter account holder name: ").strip()
+        if len(account_name) > 20:
+            self.outputStream.write("Error: Name too long (max 20 characters)")
+            return
+        account_name = f"{account_name:<20}"[:19]
 
     def pay_bill(self):
         self.outputStream.write("enter bill amount:")
@@ -306,10 +318,66 @@ class ATM:
             full_acc = f"{acc_num} {acc_name} {acc_status} {acc_balance}"
             file.write("\n" + full_acc)
 
-        # constraint: this account should not be available for other transactions in this session
-        self.session.loggedIn = True
-
         print("Account created:", acc_num)
+
+    def delete(self):
+        # path to the accounts file
+        accounts_path = "data/accounts.txt"
+
+        # constraint: privileged transaction - only accepted when logged in admin mode
+        if not self.session.isAdmin:
+            self.outputStream.write("Error: Admin privileges required")
+            return
+        
+        # ask for the bank account holder’s name (as a text line)
+        account_name = input("Enter account holder name: ").strip()
+        # constraint: name limited to 20 characters
+        if len(account_name) > 20:
+            self.outputStream.write("Error: Name too long (max 20 characters)")
+            return
+        # format name to fixed width 20 characters for file comparison
+        account_name = f"{account_name:<20}"[:20]
+
+        # ask for the account number (as a text line)
+        account_num = input("Enter account number: ").strip()
+        # constraint: account number must be 5 digits
+        if len(account_num) != 5 or not account_num.isdigit():
+            self.outputStream.write("Error: Invalid account number format")
+            return
+        
+        # read all existing accounts from the file
+        with open(accounts_path, "r+") as file:
+            lines = file.readlines()
+
+        # filter the account to be deleted
+        found = False
+        new_lines = []
+        for line in lines:
+            # extract account number and account holder name from line
+            line_acc_num = line[0:5]
+            line_name = line[6:26]
+            # if line matches the account to delete, skip it
+            if line_acc_num == account_num and line_name.lower() == account_name.lower():
+                found = True
+                continue
+            # otherwise, keep the line (remove newline at end to prevent extra blank lines)
+            new_lines.append(line.rstrip("\n"))
+
+        # if the account was not found, output error and return
+        if not found:
+            self.outputStream.write(
+                "No account found for " + account_name.strip() + " with account number " + account_num
+            )
+            return 
+
+        # write the remaining accounts back to the file, effectively deleting the chosen account
+        with open(accounts_path, "w") as file:
+            file.writelines(new_lines)
+
+        # output confirmation of deletion
+        self.outputStream.write(
+            f"Account {account_num} for {account_name.strip()} has been deleted."
+        )
 
     def disable_account(self):
         # constraint: privileged transaction - only accepted when logged in admin mode
