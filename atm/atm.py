@@ -2,8 +2,10 @@ from .session import Session
 from .account_store import AccountStore
 from .input_stream import InputStream
 from .output_stream import OutputStream
+from .record_actions import RecordActions
 
-version = "alpha v1.3"
+
+version = "alpha v1.4"
 class ATM:
     def __init__(self, accounts_path, inputPath, outputPath):
         self.session = Session()
@@ -14,23 +16,23 @@ class ATM:
         self.accounts.load(accounts_path)
 
         # log transactions to write on logout
-        self.transactions = []
-        self.transfers = []
+        self.recordActions = RecordActions()
+
     
     def run(self):
         self.outputStream.write(f"welcome to ATM {version}")
 
         while self.running:
-            self.outputStream.write("\n1. login")
-            self.outputStream.write("2. deposit")
-            self.outputStream.write("3. withdraw")
-            self.outputStream.write("4. transfer")
-            self.outputStream.write("5. pay bill")
-            self.outputStream.write("6. create account")
-            self.outputStream.write("7. disable account")
-            self.outputStream.write("8. change plan")
-            self.outputStream.write("9. logout")
-            self.outputStream.write("10. exit\n")
+            self.outputStream.write("\n--> login")
+            self.outputStream.write("--> deposit")
+            self.outputStream.write("--> withdraw")
+            self.outputStream.write("--> transfer")
+            self.outputStream.write("--> paybill")
+            self.outputStream.write("--> create")
+            self.outputStream.write("--> delete")
+            self.outputStream.write("--> disable")
+            self.outputStream.write("--> changeplan")
+            self.outputStream.write("--> logout\n")
 
             cli_choice = self.inputStream.readNextLine().strip().lower()
             
@@ -45,15 +47,15 @@ class ATM:
             elif cli_choice == "transfer":
                 self.transfer()
             elif cli_choice == "paybill":
-                self.pay_bill()
+                self.paybill()
             elif cli_choice == "create account":
-                self.create_account()
+                self.create()
+            elif cli_choice == "delete account":
+                self.delete()
             elif cli_choice == "disable account":
-                self.disable_account()
+                self.disable()
             elif cli_choice == "change plan":
-                self.change_plan()
-            elif cli_choice == "exit":
-                self.exit()
+                self.changeplan()
             else:
                 self.outputStream.write("not an option, try again")
 
@@ -76,7 +78,7 @@ class ATM:
             account_name = self.inputStream.readNextLine().strip()
                         
             # check if account holder exists
-            if not self.accounts.findAccountByNameAndNumber(account_name, None):
+            if not self.accounts.findAccountByName(account_name):
                 self.outputStream.write(f"no account found for '{account_name}'")
                 return
             
@@ -96,14 +98,17 @@ class ATM:
             return
         
         # should write out the bank account transaction file 
-        self.outputStream.writeTransactionFile(self.transactions)
+        self.outputStream.writeTransactionFile(self.recordActions.get_transactions())
 
         # clear session data
         self.session.loggedIn = False
         self.session.isAdmin = False
         self.session.accountHolderName = None
-        self.transactions = []
+        self.recordActions.clear_transactions()
         self.outputStream.write("logged out successfully")
+
+        self.outputStream.write(f"thank you for using ATM {version}!")
+        self.running = False
 
     def deposit(self):
         # constraint: bank account must be a valid account for the account holder currently logged in.
@@ -136,7 +141,7 @@ class ATM:
         self.outputStream.write(f"deposited ${amount:.2f} to account {account_num}. funds will be available after logout")
         
         # should save this information for the bank account transaction file
-        self.record_transaction("04", account_name, account_num, amount, "")
+        self.recordActions.record_transaction("04", account_name, account_num, amount, "")
 
     def withdraw(self):
         # constraint: bank account must be a valid account for the account holder currently logged in.
@@ -180,11 +185,9 @@ class ATM:
         self.outputStream.write(f"withdrew ${amount:.2f} from account {account_num}. funds will be available after logout")
         
         # should save this information for the bank account transaction file
-        self.record_transaction("01", account_name, account_num, amount, "")
+        self.recordActions.record_transaction("01", account_name, account_num, amount, "")
 
     def transfer(self):
-        # self.outputStream.write("placeholder for transfer...")
-
         # constraint: bank account must be a valid account for the account holder currently logged in.
         if not self.session.loggedIn:
             self.outputStream.write("not logged in. please login first")
@@ -219,8 +222,8 @@ class ATM:
             self.outputStream.write("can't withdraw more than 1000 in standard mode")
             return
 
-        accountSender = self.accounts.findAccount(account_sender_num)
-        accountReciever = self.accounts.findAccount(account_reciever_num)
+        accountSender = self.accounts.findAccountByAccountNum(account_sender_num)
+        accountReciever = self.accounts.findAccountByAccountNum(account_reciever_num)
 
         # constraint: Sender balance must be at least $0.00 after withdrawal
         if accountSender.balance < transfer_amount:
@@ -228,34 +231,83 @@ class ATM:
             return
 
         # constraint: Reciever balance must be at least $0.00 after withdrawal
-        if accountReciever.balance < transfer_amount:
-            self.outputStream.write("Sender has insufficient funds for withdrawal")
+        if accountReciever.balance + transfer_amount < 0:
+            self.outputStream.write("Reciever has insufficient funds for transfer")
             return
 
         accountSender.balance = accountSender.balance - transfer_amount
         accountReciever.balance = accountSender.balance + transfer_amount 
 
         # Record Transfer
-        self.record_transfer(self, code="4", account_num_sender=account_sender_num, 
+        self.recordActions.record_transfer(code="4", account_num_sender=account_sender_num, 
                              account_num_reciever=account_reciever_num, amount=transfer_amount, name=account_name)
 
         self.outputStream.write("Transaction Completed")
         return
 
-    def pay_bill(self):
-        self.outputStream.write("enter bill amount:")
-        amount = float(self.inputStream.readNextLine())
-        if amount > self.balance:
-            self.outputStream.write("insufficient funds")
-        else:
-            self.balance -= amount
-            self.outputStream.write(f"paid bill of ${amount:.2f}")
-            self.display_current_balance()
+    def paybill(self):
+        # constraint: bank account must be a valid account for the account holder currently logged in.
+        if not self.session.loggedIn:
+            self.outputStream.write("not logged in. please login first")
+            return
 
-    def create_account(self):
+        # should ask for the account holder’s name (if logged in as admin)
+        if self.session.isAdmin:
+            self.outputStream.write("enter account holder name:")
+            account_name = self.inputStream.readNextLine().strip()
+        else:
+            account_name = self.session.accountHolderName
+
+        # should ask for the account number (as a text line)
+        self.outputStream.write("enter account number:")
+        account_num = self.inputStream.readNextLine().strip()
+
+        # find account
+        account = self.accounts.findAccountByNameAndNumber(account_name, account_num)
+        if not account:
+            self.outputStream.write(f"no account found for '{account_name}' with account number '{account_num}'")
+            return
+
+        # should ask for the company to whom the bill is being paid
+        self.outputStream.write("Enter company (EC/CQ/FI):")
+        company_code = self.inputStream.readNextLine().strip().upper()
+
+        # constraint: The company to whom the bill is being paid must be “The Bright Light Electric Company (EC)”, “Credit Card Company Q (CQ)” or “Fast Internet, Inc. (FI)”
+        valid_companies = {
+            "EC": "The Bright Light Electric Company",
+            "CQ": "Credit Card Company Q",
+            "FI": "Fast Internet, Inc."
+        }
+
+        if company_code not in valid_companies:
+            self.outputStream.write("Error: Invalid company. Must be EC, CQ, or FI.")
+            return
+        
+        # should ask for the amount to pay
+        self.outputStream.write("Enter bill amount:")
+        amount = self.inputStream.readNextLine().strip()    
+
+        # constraint: maximum amount that can be paid to a bill holder in current session is $2000.00 in standard mode
+        if not self.session.isAdmin:
+            if self.session_paybills + amount > 2000.00:
+                self.outputStream.write(f"Error: Bill payment exceeds session limit. Remaining: ${2000.00 - self.session_paybills:.2f}")
+                return
+            
+        # constraint: account balance must be at least $0.00 after bill is paid
+        if account.balance < amount:
+            self.outputStream.write("Error: Insufficient funds.")
+            return
+        
+        # should save this information for the bank account transaction file
+        self.recordActions.record_transaction("03", account_name, account_num, amount, company_code)
+        
+    def create(self):
         self.outputStream.write("placeholder for creating a new account...")
 
-    def disable_account(self):
+    def delete(self):
+        self.outputStream.write("placeholder for deleting an account...")
+
+    def disable(self):
         # constraint: privileged transaction - only accepted when logged in admin mode
         if not self.session.loggedIn:
             self.outputStream.write("not logged in. please login first")
@@ -284,11 +336,11 @@ class ATM:
         account.status = "D"
 
         # should save this information for the bank account transaction file
-        self._record_transaction("07", account_name, account_num, 0.0, "")
+        self.recordActions.record_transaction("07", account_name, account_num, 0.0, "")
     
         self.outputStream.write(f"Account {account_num} for {account_name} has been disabled.") 
                 
-    def change_plan(self):
+    def changeplan(self):
         if not self.session.loggedIn:
             self.outputStream.write("not logged in. please login first")
             return
@@ -324,38 +376,6 @@ class ATM:
 
         # should save this information for the bank account transaction file
 
-        self.record_transaction("08", account_name, account_num, 0.0, "")
+        self.recordActions.record_transaction("08", account_name, account_num, 0.0, "")
         
         self.outputStream.write(f"account plan changed for account {account_num}.")
-
-    def exit(self):
-        if self.session.loggedIn:
-            self.outputStream.write("please logout before exiting")
-            return
-        
-        self.outputStream.write(f"thank you for using ATM {version}!")
-        self.running = False
-    
-    def record_transaction(self, code, name, account_num, amount, misc):
-        transaction = {
-            'code': code,
-            'name': name,
-            'account_num': account_num,
-            'amount': amount,
-            'misc': misc
-        }
-        self.transactions.append(transaction)
-
-    def record_transfer(self, code,  account_num_sender, account_num_reciever, amount, misc,name="Standard_Account"):
-        transaction = {
-            'code': code,
-            'name': name,
-            'account_num_sender': account_num_sender,
-            'account_num_reciever' : account_num_reciever,
-            'amount': amount,
-            'misc': misc
-        }
-        self.transactions.append(transaction)
- 
-    def display_current_balance(self):
-        self.outputStream.write(f"current balance: ${self.balance:.2f}")

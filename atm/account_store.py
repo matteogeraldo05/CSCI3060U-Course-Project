@@ -11,7 +11,7 @@ class AccountStore:
                 line = line.rstrip('\n')
                 
                 # contraint: every line is exactly 37 characters (plus newline)
-                account_num = int(line[0:5].strip())
+                account_num = line[0:5].strip()
                 name = line[6:26].strip()
                 status = line[27]
                 balance = float(line[29:37].strip())
@@ -46,13 +46,3 @@ class AccountStore:
             if account.accountNum == accountNum:
                 return account
         return None
-
-
-    def generateNewAccount(self):
-        # format: NNNNN_AAAAAAAAAAAAAAAAAAAA_S_PPPPPPPP
-        # _ --> is a space
-        # NNNNN --> the bank account number
-        # AAAAAAAAAAAAAAAAAAAA --> the account holder’s name
-        # S --> the bank account status – active (A) or disabled (D)
-        # PPPPPPPP --> the current balance of the account (in Canadian dollars)
-        pass
