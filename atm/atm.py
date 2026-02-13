@@ -3,7 +3,7 @@ from .account_store import AccountStore
 from .input_stream import InputStream
 from .output_stream import OutputStream
 
-version = "alpha v1.2"
+version = "alpha v1.3"
 class ATM:
     def __init__(self, accounts_path, inputPath, outputPath):
         self.session = Session()
@@ -196,8 +196,6 @@ class ATM:
             account_name = self.inputStream.readNextLine().strip()
         else:
             account_name = self.session.accountHolderName
-
-
         
         # get the account number of the money sender
         self.outputStream.write("enter account number to transfer money from")
@@ -243,7 +241,6 @@ class ATM:
 
         self.outputStream.write("Transaction Completed")
         return
-
 
     def pay_bill(self):
         self.outputStream.write("enter bill amount:")
@@ -292,7 +289,44 @@ class ATM:
         self.outputStream.write(f"Account {account_num} for {account_name} has been disabled.") 
                 
     def change_plan(self):
-        self.outputStream.write("placeholder for changing plan...")
+        if not self.session.loggedIn:
+            self.outputStream.write("not logged in. please login first")
+            return
+        
+        # constraint: privileged transaction - only accepted when logged in admin mode
+        if not self.session.isAdmin:
+            self.outputStream.write("Error: This is a privileged transaction. Admin access required.")
+            return
+        
+        # should ask for the bank account holder’s name (as a text line)
+        self.outputStream.write("enter account holder name:")
+        account_name = self.inputStream.readNextLine().strip()
+        
+        # should ask for the account number (as a text line)
+        # constraint: account number must be the number of the account holder specified
+        self.outputStream.write("enter account number:")
+        account_num = self.inputStream.readNextLine().strip()
+
+        # constraint: account holder’s name must be the name of an existing account holder
+        account = self.accounts.findAccountByNameAndNumber(account_name, account_num)
+        if not account:
+            self.outputStream.write(f"no account found for '{account_name}' with account number '{account_num}'")
+            return
+        
+        # should set the bank account payment plan from student (SP) to non-student (NP)
+        if account.plan == "SP":
+            account.plan = "NP"
+        elif account.plan == "NP":
+            account.plan = "SP"
+        else:
+            self.outputStream.write(f"account {account_num} has an invalid plan")
+            return
+
+        # should save this information for the bank account transaction file
+
+        self.record_transaction("08", account_name, account_num, 0.0, "")
+        
+        self.outputStream.write(f"account plan changed for account {account_num}.")
 
     def exit(self):
         if self.session.loggedIn:
@@ -322,5 +356,6 @@ class ATM:
             'misc': misc
         }
         self.transactions.append(transaction)
+ 
     def display_current_balance(self):
         self.outputStream.write(f"current balance: ${self.balance:.2f}")
