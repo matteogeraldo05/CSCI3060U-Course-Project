@@ -256,7 +256,60 @@ class ATM:
             self.display_current_balance()
 
     def create_account(self):
-        self.outputStream.write("placeholder for creating a new account...")
+    # constraint: privileged transaction - only accepted when logged in admin mode
+        if not self.session.isAdmin:
+            print("Error: Admin privileges required")
+            return 
+
+        # should read the last account number from the accounts file
+        accounts_file = open("data/accounts.txt", "r+")
+
+        with accounts_file as file:
+            lines = file.readlines()
+
+            # constraint: bank account numbers must be unique in the Bank System
+            # increment the last account number to create a new unique account number
+            final_acc = lines[-1][0:5].strip("0")
+            acc_num = int(final_acc) + 1
+            acc_num = f"{acc_num:05d}"
+
+            # should set the account status to active (A)
+            acc_status = "A"
+
+            # should ask for the name of the account holder (as a text line)
+            acc_name = input("Input New Account Name (max 20 characters): ").strip()
+
+            # constraint: new account holder name is limited to at most 20 characters
+            if len(acc_name) > 20:
+                print("Error: Name larger than 20 characters")
+                return
+            
+            # format the account holder name to fixed width
+            acc_name = f"{acc_name:<20}"[:19]
+
+            # should ask for the initial balance of the account
+            try:
+                acc_balance = float(input("Initial Balance (max $99999.99): "))
+            except ValueError:
+                print("Error: invalid balance")
+                return
+            
+            # constraint: account balance can be at most $99999.99
+            if acc_balance < 0 or acc_balance > 99999.99:
+                print("Error: Balance number out of range ($0 - $99999.99)")
+                return
+            
+            # format the balance to fixed width currency field
+            acc_balance = f"{acc_balance:08.2f}"
+
+            # should save this information to the bank account transaction file
+            full_acc = f"{acc_num} {acc_name} {acc_status} {acc_balance}"
+            file.write("\n" + full_acc)
+
+        # constraint: this account should not be available for other transactions in this session
+        self.session.loggedIn = True
+
+        print("Account created:", acc_num)
 
     def disable_account(self):
         # constraint: privileged transaction - only accepted when logged in admin mode
