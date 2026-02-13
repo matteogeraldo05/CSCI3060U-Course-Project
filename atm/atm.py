@@ -555,7 +555,7 @@ class ATM:
 
         self.outputStream.write(f"Account created: {acc_num} for {acc_name.strip()} with balance ${acc_balance:.2f}")
         self.outputStream.write("Note: This account will not be available for transactions until next session")
-
+    
     '''
     Deletes an exisiting bank account from the system
 

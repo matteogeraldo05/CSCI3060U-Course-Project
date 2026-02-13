@@ -1,9 +1,37 @@
+'''
+The InputStream class manages all user input for the ATM Banking system.
+
+This class is responsible for reading commands either from standard input
+(interactive command line) or from a provided file source. It allows the
+system to operate in both interactive mode and automated file-driven mode.
+
+It maintains the current input source state, handles end-of-file transitions,
+echoes file-based commands for visibility, and safely captures interruptions
+to ensure controlled session termination.
+'''
+
 class OutputStream:
     def __init__(self, srcPath):
         self.srcPath = srcPath
 
+    '''
+    Writes a message to the output stream.
+    In interactive mode, this simply prints the message to the console.
+    '''
+
     def write(self, message):
         print(message)
+
+    '''
+    Writes all recorded transactions to the output file
+    in the required fixed-width transaction format.
+
+    Each transaction is formatted according to system
+    specifications, including transaction code, account
+    holder name, account number, amount, and miscellaneous
+    information. An end-of-session transaction (00) is
+    appended after all records.
+    '''
     
     def writeTransactionFile(self, transactions):
         # format: CC_AAAAAAAAAAAAAAAAAAAA_NNNNN_PPPPPPPP_MM
