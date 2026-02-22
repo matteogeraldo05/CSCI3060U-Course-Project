@@ -18,10 +18,10 @@ It maintains session state and logs operations into a file upon logout
 '''
 
 class ATM:
-    def __init__(self, accounts_path, inputPath, outputPath):
+    def __init__(self, accounts_path, outputPath):
         self.session = Session()
         self.accounts = AccountStore()
-        self.inputStream = InputStream(inputPath)
+        self.inputStream = InputStream()
         self.outputStream = OutputStream(outputPath)
         self.running = True
         self.accounts.load(accounts_path)
