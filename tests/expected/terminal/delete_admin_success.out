@@ -1,0 +1,44 @@
+welcome to ATM alpha v1.4
+
+--> login
+--> deposit
+--> withdraw
+--> transfer
+--> paybill
+--> create
+--> delete
+--> disable
+--> changeplan
+--> logout
+
+Enter session type 'standard' or 'admin':
+logged in as admin
+
+--> login
+--> deposit
+--> withdraw
+--> transfer
+--> paybill
+--> create
+--> delete
+--> disable
+--> changeplan
+--> logout
+
+Enter account holder name:
+Enter account number:
+Account 00001 for broke test has been deleted.
+
+--> login
+--> deposit
+--> withdraw
+--> transfer
+--> paybill
+--> create
+--> delete
+--> disable
+--> changeplan
+--> logout
+
+logged out successfully
+thank you for using ATM alpha v1.4!

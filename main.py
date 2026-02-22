@@ -1,3 +1,4 @@
+import sys
 from atm.atm import ATM
 '''
 Main class used to run the program
@@ -31,8 +32,8 @@ LOGOUT:
     When logged out, the ATM refreshed and updates transaction logs.
 '''
 def main():
-    accounts_file = "data/accounts.txt"
-    output_file = "data/output.txt"
+    accounts_file = sys.argv[1]
+    output_file = sys.argv[2]
 
     atm = ATM(accounts_file, output_file)
     atm.run()
