@@ -1,0 +1,45 @@
+welcome to ATM alpha v1.4
+
+--> login
+--> deposit
+--> withdraw
+--> transfer
+--> paybill
+--> create
+--> delete
+--> disable
+--> changeplan
+--> logout
+
+Enter session type 'standard' or 'admin':
+logged in as admin
+
+--> login
+--> deposit
+--> withdraw
+--> transfer
+--> paybill
+--> create
+--> delete
+--> disable
+--> changeplan
+--> logout
+
+Input New Account Name (max 20 characters):
+Initial Balance (max $99999.99):
+Account created: 00004 for new account with balance $500.00
+Note: This account will not be available for transactions until next session
+
+--> login
+--> deposit
+--> withdraw
+--> transfer
+--> paybill
+--> create
+--> delete
+--> disable
+--> changeplan
+--> logout
+
+logged out successfully
+thank you for using ATM alpha v1.4!
