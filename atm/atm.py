@@ -250,6 +250,7 @@ class ATM:
         self.outputStream.write("enter account number:")
         account_num = self.inputStream.readNextLine().strip()
 
+
         # find account
         account = self.accounts.findAccountByNameAndNumber(account_name, account_num)
         if not account:
@@ -263,7 +264,16 @@ class ATM:
         
         # then should ask for the amount to withdraw
         self.outputStream.write("enter withdraw amount:")
-        amount = float(self.inputStream.readNextLine())
+
+        # ensure amount is a number not a letter
+
+        try:
+            amount = float(self.inputStream.readNextLine())
+        except ValueError:
+            self.outputStream.write("Withdraw amoutn must be a valid number")
+            return 
+
+
         
         # check number is positive
         if amount <= 0:
@@ -531,11 +541,15 @@ class ATM:
             return
         
         # 2/26 - ensure account name is more then length 0
-
         if len(acc_name) == 0:
             self.outputStream.write("Error: Account name can't be empty")
             return
         
+        if acc_name.replace(" ", "").isalpha() == False:
+            self.outputStream.write("Error: Account name can only have letters")
+            return 
+
+
         # format the account holder name to fixed width
         acc_name = f"{acc_name:<20}"[:19]
 
