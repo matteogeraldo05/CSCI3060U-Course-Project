@@ -461,7 +461,13 @@ class ATM:
         
         # should ask for the amount to pay
         self.outputStream.write("enter bill amount:")
-        amount = float(self.inputStream.readNextLine().strip())
+
+        # ensure amount is numerical 
+        try:
+            amount = float(self.inputStream.readNextLine().strip())
+        except ValueError:
+            self.outputStream.write("Error: Invalid amount format.")
+            return
 
         # check that number is positive
         if amount <= 0:
