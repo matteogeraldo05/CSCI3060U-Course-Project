@@ -1,7 +1,5 @@
 #!/bin/bash
 
-export PYTHON=/c/Users/zainm/miniconda3/python.exe
-
 
 # directories
 INPUT_DIR="tests/inputs"
@@ -44,7 +42,7 @@ for input_file in "$INPUT_DIR"/*.in; do
     output_terminal="$OUTPUT_TERMINAL_DIR/$test_name.out"
     
     # run the ATM program
-    python main.py "$TEMP_ACCOUNTS" "$output_atf" < "$input_file" > "$output_terminal" 2>&1
+    python3 main.py "$TEMP_ACCOUNTS" "$output_atf" < "$input_file" > "$output_terminal" 2>&1
     exit_code=$?  # capture exit code immediately
     
     if [ $exit_code -eq 0 ]; then
