@@ -530,6 +530,12 @@ class ATM:
             self.outputStream.write("Error: Name larger than 20 characters")
             return
         
+        # 2/26 - ensure account name is more then length 0
+
+        if len(acc_name) == 0:
+            self.outputStream.write("Error: Account name can't be empty")
+            return
+        
         # format the account holder name to fixed width
         acc_name = f"{acc_name:<20}"[:19]
 
