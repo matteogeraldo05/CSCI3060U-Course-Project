@@ -250,7 +250,6 @@ class ATM:
         self.outputStream.write("enter account number:")
         account_num = self.inputStream.readNextLine().strip()
 
-
         # find account
         account = self.accounts.findAccountByNameAndNumber(account_name, account_num)
         if not account:
@@ -264,16 +263,7 @@ class ATM:
         
         # then should ask for the amount to withdraw
         self.outputStream.write("enter withdraw amount:")
-
-        # ensure amount is a number not a letter
-
-        try:
-            amount = float(self.inputStream.readNextLine())
-        except ValueError:
-            self.outputStream.write("Withdraw amoutn must be a valid number")
-            return 
-
-
+        amount = float(self.inputStream.readNextLine())
         
         # check number is positive
         if amount <= 0:
@@ -461,7 +451,14 @@ class ATM:
         
         # should ask for the amount to pay
         self.outputStream.write("enter bill amount:")
-        amount = float(self.inputStream.readNextLine().strip())
+        self.outputStream.write("enter bill amount:")
+        raw_input = self.inputStream.readNextLine().strip()
+
+        try:
+            amount = float(raw_input)
+        except ValueError:
+            self.outputStream.write("Error: Invalid amount format.")
+            return
 
         # check that number is positive
         if amount <= 0:
@@ -540,16 +537,6 @@ class ATM:
             self.outputStream.write("Error: Name larger than 20 characters")
             return
         
-        # 2/26 - ensure account name is more then length 0
-        if len(acc_name) == 0:
-            self.outputStream.write("Error: Account name can't be empty")
-            return
-        
-        if acc_name.replace(" ", "").isalpha() == False:
-            self.outputStream.write("Error: Account name can only have letters")
-            return 
-
-
         # format the account holder name to fixed width
         acc_name = f"{acc_name:<20}"[:19]
 
