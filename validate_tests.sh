@@ -1,5 +1,19 @@
 #!/bin/bash
 
+: '
+ATM Output Validation Script
+
+This script validates the results of executed ATM tests by comparing:
+
+1) Generated transaction files (.atf)
+2) Generated terminal output files (.out)
+
+Each output file is compared against a corresponding expected file.
+Differences are displayed using unified diff format.
+
+The script exits with non-zero status if any mismatch is detected.
+'
+
 # directories
 OUTPUT_ATF_DIR="tests/output/atf"
 OUTPUT_TERMINAL_DIR="tests/output/terminal"

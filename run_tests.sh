@@ -1,5 +1,20 @@
 #!/bin/bash
 
+: '
+ATM Test Runner Script
+
+This script automatically executes all ATM test cases located in the
+tests/inputs directory.
+
+For each test case:
+1) A temporary copy of the accounts file is created
+2) The ATM program is executed using redirected input
+3) Output transaction (.atf) and terminal (.out) files are generated
+4) The exit status is evaluated to determine pass/fail
+
+The script tracks total, passed, and failed tests,
+and returns a non-zero exit code if any test fails.
+'
 
 # directories
 INPUT_DIR="tests/inputs"
