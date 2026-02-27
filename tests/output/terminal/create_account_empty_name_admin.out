@@ -26,9 +26,7 @@ logged in as admin
 --> logout
 
 Input New Account Name (max 20 characters):
-Initial Balance (max $99999.99):
-Account created: 00004 for  with balance $10.00
-Note: This account will not be available for transactions until next session
+Error: Account name can't be empty
 
 --> login
 --> deposit
