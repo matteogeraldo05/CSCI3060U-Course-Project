@@ -531,11 +531,15 @@ class ATM:
             return
         
         # 2/26 - ensure account name is more then length 0
-
         if len(acc_name) == 0:
             self.outputStream.write("Error: Account name can't be empty")
             return
         
+        if acc_name.replace(" ", "").isalpha() == False:
+            self.outputStream.write("Error: Account name can only have letters")
+            return 
+
+
         # format the account holder name to fixed width
         acc_name = f"{acc_name:<20}"[:19]
 
