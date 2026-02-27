@@ -250,6 +250,7 @@ class ATM:
         self.outputStream.write("enter account number:")
         account_num = self.inputStream.readNextLine().strip()
 
+
         # find account
         account = self.accounts.findAccountByNameAndNumber(account_name, account_num)
         if not account:
@@ -263,7 +264,16 @@ class ATM:
         
         # then should ask for the amount to withdraw
         self.outputStream.write("enter withdraw amount:")
-        amount = float(self.inputStream.readNextLine())
+
+        # ensure amount is a number not a letter
+
+        try:
+            amount = float(self.inputStream.readNextLine())
+        except ValueError:
+            self.outputStream.write("Withdraw amoutn must be a valid number")
+            return 
+
+
         
         # check number is positive
         if amount <= 0:
