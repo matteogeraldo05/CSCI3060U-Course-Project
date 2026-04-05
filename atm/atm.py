@@ -529,10 +529,21 @@ class ATM:
             lines = file.readlines()
     
         # constraint: bank account numbers must be unique in the Bank System
-        # increment the last account number to create a new unique account number
-        final_acc = lines[-1][0:5].strip("0")
-        acc_num = int(final_acc) + 1
-        acc_num = f"{acc_num:05d}"
+        # derive the next account number from valid account records, ignoring EOF markers
+        max_account_num = 0
+        for line in lines:
+            if len(line) < 26:
+                continue
+
+            account_name = line[6:26].strip()
+            if account_name == "END_OF_FILE":
+                continue
+
+            account_num_raw = line[0:5].strip()
+            if account_num_raw.isdigit():
+                max_account_num = max(max_account_num, int(account_num_raw))
+
+        acc_num = f"{max_account_num + 1:05d}"
 
         # should set the account status to active (A)
         acc_status = "A"
